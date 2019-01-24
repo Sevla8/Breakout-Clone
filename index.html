@@ -3,14 +3,12 @@
 <head>
     <meta charset="utf-8" />
     <title>Gamedev Canvas Workshop</title>
-    <style>
-    	* { padding: 0; margin: 0; }
-    	canvas { background: #eee; display: block; margin: 0 auto; }
-    </style>
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
 
 	<canvas id="myCanvas" width="480" height="320"></canvas>
+	<div class="gameOver">Game Over</div>
 
 	<script>
 		var canvas = document.getElementById("myCanvas");
@@ -33,19 +31,19 @@
 		var brickPadding = 10;
 		var brickOffsetTop = 30;
 		var brickOffsetLeft = 30;
+		var gameOver = document.querySelector(".gameOver");
+		var interval;
 
 		var bricks = [];
 		for (let c = 0; c < brickColumnCount; c += 1) {
 			bricks[c] = [];
 			for (let r = 0; r < brickRowCount; r += 1)
-				bricks[c][r] = { x: 0, y: 0 };
+				bricks[c][r] = { x: 0, y: 0, status: 1 };
 		}
 
 		document.addEventListener("keydown", keyDownHandler, false);
 		document.addEventListener("keyup", keyUpHandler, false);
-
-		//37 --> fleche gauche
-		//39 --> fleche droite
+		gameOver.addEventListener("click", function() { document.location.reload() });
 
 		function keyDownHandler(event) {
 			if (event.keyCode == 39)
@@ -59,6 +57,20 @@
 				rightPressed = false;
 			else if (event.keyCode == 37)
 				leftPressed = false;
+		}
+
+		function collisionDetection() {
+			for (let c = 0; c < brickColumnCount; c += 1) {
+				for (let r = 0; r < brickRowCount; r += 1) {
+					let b = bricks[c][r];
+					if (b.status == 1) {
+						if (x > b.x && x < b.x+brickWidth && y > b.y && y < b.y+brickHeigth) {
+							dy = -dy;
+							b.status = 0;
+						}
+					}
+				}
+			}
 		}
 
 		function drawBall() {
@@ -80,15 +92,17 @@
 		function drawBricks() {
 			for (let c = 0; c < brickColumnCount; c += 1) {
 				for (let r = 0; r < brickRowCount; r += 1) {
-					let brickX = c * (brickWidth+brickPadding) + brickOffsetLeft;
-					let brickY = r * (brickHeigth+brickPadding) + brickOffsetTop;
-					bricks[c][r].x = brickX;
-					bricks[c][r].y = brickY;
-					ctx.beginPath();
-					ctx.rect(brickX, brickY, brickWidth, brickHeigth);
-					ctx.fillStyle = "#0095DD";
-					ctx.fill();
-					ctx.closePath();
+					if (bricks[c][r].status == 1) {
+						let brickX = c * (brickWidth+brickPadding) + brickOffsetLeft;
+						let brickY = r * (brickHeigth+brickPadding) + brickOffsetTop;
+						bricks[c][r].x = brickX;
+						bricks[c][r].y = brickY;
+						ctx.beginPath();
+						ctx.rect(brickX, brickY, brickWidth, brickHeigth);
+						ctx.fillStyle = "#0095DD";
+						ctx.fill();
+						ctx.closePath();
+					}
 				}
 			}
 		}
@@ -98,6 +112,7 @@
 			drawBricks();
 			drawBall();
 			drawPaddle();
+			collisionDetection();
 			if (x+dx < ballRadius || x+dx > canvas.width-ballRadius)
 				dx = -dx;
 			if (y+dy < ballRadius)
@@ -106,8 +121,9 @@
 				if (x > paddleX && x < paddleX+paddleWidth)
 					dy = -dy;
 				else {
-					alert("GAME OVER");
-					document.location.reload();
+					gameOver.style.display = "flex";
+					clearInterval(interval);
+					return;
 				}
 			}
 			if (rightPressed && paddleX < canvas.width-paddleWidth)
@@ -118,7 +134,7 @@
 			y += dy;
 		}
 
-		setInterval(draw, 10);
+		interval = setInterval(draw, 10);
 
 	</script>
 
